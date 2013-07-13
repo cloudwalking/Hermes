@@ -6,20 +6,24 @@
 #include "Adafruit_LSM303.h"
 #include "Wire.h"
 
-int LED_COUNT = 16;
-int DATA_PIN = 9;
-int CLOCK_PIN = 10;
-int COLOR_RANGE = 384;
+struct accelReading {
+   int x;
+   int y;
+   int z;
+};
 
 void setup() {
-  //colorSetup();
-  accelSetup();
   Serial.begin(9600);
+  
+  //colorSetup();
+  
+  accelSetup();
 }
 
 void loop() {
   //showColors();
-  pollAccel(50);
+  
+  accelPoll(25);
 }
 
 
@@ -28,29 +32,63 @@ void loop() {
 ///////////
 
 Adafruit_LSM303 lsm;
+accelReading accelBuffer[10];
+int bufferPosition;
 
 void accelSetup() {
+  Serial.println("BEGIN");
+  
   lsm.begin();
+  
+  bufferPosition = 0;
+
+  for (int i = 0; i < bufferSize(); i++) {
+    accelBuffer[i].x = 0;
+    accelBuffer[i].y = 0;
+    accelBuffer[i].z = 0;
+  }
+  
+  printBuffer();
 }
 
-void pollAccel(int delayMilliseconds) {
+void accelPoll(int delayMilliseconds) {
   lsm.read();
-  int x = lsm.accelData.x;
-  int y = lsm.accelData.y;
-  int z = lsm.accelData.z;
   
-  Serial.print(x); Serial.print (", ");
-  Serial.print(y); Serial.print (", ");
-  Serial.print(z);
-  Serial.println();
+  accelReading *buffer = &accelBuffer[bufferPosition];
+  
+  buffer->x = lsm.accelData.x;
+  buffer->y = lsm.accelData.y;
+  buffer->z = lsm.accelData.z;
+
+  printBuffer();
+  
+  if (++bufferPosition >= bufferSize()) {
+    bufferPosition = 0;
+  }
   
   delay(delayMilliseconds);
+}
+
+int bufferSize() {
+  return sizeof(accelBuffer) / sizeof(accelBuffer[0]);
+}
+
+void printBuffer() {
+  Serial.print(accelBuffer[bufferPosition].x); Serial.print (", ");
+  Serial.print(accelBuffer[bufferPosition].y); Serial.print (", ");
+  Serial.print(accelBuffer[bufferPosition].z);
+  Serial.println();
 }
 
 
 ///////////
 // color //
 ///////////
+
+int LED_COUNT = 16;
+int DATA_PIN = 9;
+int CLOCK_PIN = 10;
+int COLOR_RANGE = 384;
 
 LPD8806 strip = LPD8806(LED_COUNT, DATA_PIN, CLOCK_PIN);
 
