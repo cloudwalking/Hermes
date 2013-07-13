@@ -2,8 +2,8 @@
 #include "SPI.h"
 
 int LED_COUNT = 16;
-int DATA_PIN = 2;
-int CLOCK_PIN = 3;
+int DATA_PIN = 9;
+int CLOCK_PIN = 10;
 int COLOR_RANGE = 384;
 
 LPD8806 strip = LPD8806(LED_COUNT, DATA_PIN, CLOCK_PIN);
@@ -21,21 +21,21 @@ void setup() {
 void loop() {
   for (int j = 0; j < 384; j++) {
     for (int i = 0; i < strip.numPixels(); i++) {
-      strip.setPixelColor(i, color(j));
+      strip.setPixelColor(i, color(j, 0.5));
     }
     strip.show();
-    delay(10);
+    delay(1);
   }
   
   for (int i = 0; i < strip.numPixels(); i++) {
     strip.setPixelColor(i, 0);
   }
   strip.show();
-  delay(1000);
+  delay(1);
 }
 
 // Color, 1 from 384.
-uint32_t color(uint16_t color)  {
+uint32_t color(uint16_t color, float brightness)  {
   byte r, g, b;
   int range = color / 128;
   switch(range) {
@@ -55,6 +55,9 @@ uint32_t color(uint16_t color)  {
       b = 127 - color % 128;
       break;
   }
+  r *= brightness;
+  g *= brightness;
+  b *= brightness;
   return(strip.Color(r, g, b));
 }
 
