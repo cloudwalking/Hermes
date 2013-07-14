@@ -10,13 +10,18 @@
 
 #include "AccelReading.h"
 
-void setup() {
-  Serial.begin(9600);
-  while (!Serial) { }		// Wait for serial to initalize.
+#define WAIT_FOR_KEYBOARD 0
+#define BRIGHTNESS 0.2
 
-	Serial.println("Strike any key to start...");
-	while (!Serial.available()) { }
-  Serial.read();
+void setup() {
+  if (WAIT_FOR_KEYBOARD) {
+    Serial.begin(9600);
+    while (!Serial) { }		// Wait for serial to initalize.
+
+  	Serial.println("Strike any key to start...");
+  	while (!Serial.available()) { }
+    Serial.read();
+  }
   
   colorSetup();
   
@@ -24,9 +29,11 @@ void setup() {
 }
 
 void loop() {
-  pauseOnKeystroke();
+  if (WAIT_FOR_KEYBOARD) {
+    pauseOnKeystroke();
+  }
 
-  //showColors();
+  // showColors();
 
   accelPoll(10);
 }
@@ -98,7 +105,7 @@ void accelPoll(int delayMilliseconds) {
   
   // For now, use 1500 as delta ceiling.
   float scale = getDelta() / 1500.0;
-  showColor(scale, 0.5);
+  showColor(scale, BRIGHTNESS);
   //transitionToColor(scale, 0.2, 5);
   
   // Advance the buffer.
@@ -189,8 +196,8 @@ bool equalReadings(AccelReading a, AccelReading b) {
 ///////////
 
 int LED_COUNT = 16;
-int DATA_PIN = 2;
-int CLOCK_PIN = 3;
+int DATA_PIN = 6;
+int CLOCK_PIN = 12;
 int COLOR_RANGE = 384;
 
 LPD8806 strip = LPD8806(LED_COUNT, DATA_PIN, CLOCK_PIN);
