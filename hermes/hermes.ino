@@ -6,11 +6,7 @@
 #include "Adafruit_LSM303.h"
 #include "Wire.h"
 
-struct accelReading {
-   int x;
-   int y;
-   int z;
-};
+#include "AccelReading.h"
 
 void setup() {
   Serial.begin(9600);
@@ -32,7 +28,7 @@ void loop() {
 ///////////
 
 Adafruit_LSM303 lsm;
-accelReading accelBuffer[10];
+AccelReading accelBuffer[10];
 int bufferPosition;
 
 void accelSetup() {
@@ -54,12 +50,22 @@ void accelSetup() {
 void accelPoll(int delayMilliseconds) {
   lsm.read();
   
-  accelReading *buffer = &accelBuffer[bufferPosition];
+  int newX = lsm.accelData.x;
+  int newY = lsm.accelData.y;
+  int newZ = lsm.accelData.z;
   
-  buffer->x = lsm.accelData.x;
-  buffer->y = lsm.accelData.y;
-  buffer->z = lsm.accelData.z;
+  AccelReading previousReading = getPreviousReading();
+  AccelReading *currentReading = &accelBuffer[bufferPosition];
 
+  currentReading->x = newX;
+  currentReading->y = newY;
+  currentReading->z = newZ;
+  
+  if (equalReadings(previousReading, *currentReading)) {
+    delay(delayMilliseconds);
+    return;
+  }
+  
   printBuffer();
   
   if (++bufferPosition >= bufferSize()) {
@@ -78,6 +84,16 @@ void printBuffer() {
   Serial.print(accelBuffer[bufferPosition].y); Serial.print (", ");
   Serial.print(accelBuffer[bufferPosition].z);
   Serial.println();
+}
+
+AccelReading getPreviousReading() {
+  int previous = bufferPosition - 1;
+  if (previous < 0) previous = bufferSize() - 1;
+  return accelBuffer[previous];
+}
+
+bool equalReadings(AccelReading a, AccelReading b) {
+  return a.x == b.x && a.y == b.y && a.z == b.z;
 }
 
 
