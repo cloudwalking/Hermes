@@ -27,10 +27,11 @@ void loop() {
 // accel //
 ///////////
 
-Adafruit_LSM303 lsm;
-AccelReading accelBuffer[10];
-int bufferPosition;
+Adafruit_LSM303 lsm; // Bridge to accelerometer hardware.
+AccelReading accelBuffer[10]; // Buffer for storing the last 10 readings.
+int bufferPosition; // Current read position of the buffer.
 
+// Initialization.
 void accelSetup() {
   Serial.println("BEGIN");
   
@@ -38,6 +39,7 @@ void accelSetup() {
   
   bufferPosition = 0;
 
+  // Initialize the entire buffer.
   for (int i = 0; i < bufferSize(); i++) {
     accelBuffer[i].x = 0;
     accelBuffer[i].y = 0;
@@ -47,7 +49,11 @@ void accelSetup() {
   printBuffer();
 }
 
+// Gathers data from accelerometer into the buffer, pausing afterwards for the given delay.
+// Currently discards duplicate readings (when we're reading faster than the hardware is updating),
+// so delay might actually be irrelevant.
 void accelPoll(int delayMilliseconds) {
+  // Read from the hardware.
   lsm.read();
   
   int newX = lsm.accelData.x;
@@ -61,6 +67,7 @@ void accelPoll(int delayMilliseconds) {
   currentReading->y = newY;
   currentReading->z = newZ;
   
+  // If the new reading is the same as the previous reading, don't advance the buffer.
   if (equalReadings(previousReading, *currentReading)) {
     delay(delayMilliseconds);
     return;
@@ -68,6 +75,7 @@ void accelPoll(int delayMilliseconds) {
   
   printBuffer();
   
+  // Advance the buffer.
   if (++bufferPosition >= bufferSize()) {
     bufferPosition = 0;
   }
