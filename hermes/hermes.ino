@@ -18,7 +18,7 @@ void setup() {
 	while (!Serial.available()) { }
   Serial.read();
   
-  //colorSetup();
+  colorSetup();
   
   accelSetup();
 }
@@ -28,13 +28,14 @@ void loop() {
 
   //showColors();
 
-  accelPoll(25);
+  accelPoll(10);
 }
 
 void pauseOnKeystroke() {
   if (Serial.available()) {
     Serial.read();
     Serial.println("Paused. Strike any key to resume...");
+    colorOff();
     while (!Serial.available());
     Serial.read();
   }
@@ -91,13 +92,14 @@ void accelPoll(int delayMilliseconds) {
   }
   
   //printBuffer();
-  //printDelta();
+  printDelta();
   //printMagnitude();
   //Serial.println();
   
   // For now, use 1500 as delta ceiling.
-  float scale = getDelta() / 1500;
-  showColor(scale);
+  float scale = getDelta() / 1500.0;
+  showColor(scale, 0.5);
+  //transitionToColor(scale, 0.2, 5);
   
   // Advance the buffer.
   if (++bufferPosition >= bufferSize()) {
@@ -204,12 +206,42 @@ void colorSetup() {
 // Sets the strip all one color.
 // Scale parameter is a value 0.0 to 1.0,
 // representing how far on the rainbow to go.
-void showColor(float scale) {
+// Brightness is measured 0.0 to 1.0.
+void showColor(float scale, float brightness) {
   int c = COLOR_RANGE * scale;
+  // Serial.print("Show "); Serial.print(scale); Serial.println(c);
   for (int i = 0; i < LED_COUNT; i++) {
-    strip.setPixelColor(i, color(c, 1));
+    strip.setPixelColor(i, color(c, brightness));
   }
   strip.show();
+}
+
+// Transitions the strip to all one color.
+// Scale parameter is a value 0.0 to 1.0,
+// representing how far on the rainbow to go.
+// Brightness is measured 0.0 to 1.0.
+// Speed is measured in milliseconds per step (5 steps).
+void transitionToColor(float scale, float brightness, int speedMilliseconds) {
+  static int STEPS = 5;
+  static int currentColor = 0;
+
+  int newColor = COLOR_RANGE * scale;
+  float step = (newColor - currentColor) / STEPS;
+
+  for (int x = 0; x < STEPS; x++) {
+    int stepColor = currentColor + step * x;
+    
+    for (int i = 0; i < LED_COUNT; i++) {
+      strip.setPixelColor(i, color(stepColor, brightness));
+    }
+  }
+  
+  strip.show();
+  
+  // Store for next time.
+  currentColor = newColor;
+  
+  delay(speedMilliseconds);
 }
 
 // Shows the color progression.
@@ -256,3 +288,9 @@ uint32_t color(uint16_t color, float brightness)  {
   return strip.Color(r, g, b);
 }
 
+void colorOff() {
+  for (int i = 0; i < strip.numPixels(); i++) {
+    strip.setPixelColor(i, 0);
+  }
+  strip.show();
+}
