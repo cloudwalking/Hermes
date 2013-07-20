@@ -11,7 +11,7 @@
 #include "AccelReading.h"
 
 #define WAIT_FOR_KEYBOARD 0
-#define BRIGHTNESS 0.2
+#define BRIGHTNESS 1
 
 void setup() {
   if (WAIT_FOR_KEYBOARD) {
@@ -98,15 +98,34 @@ void accelPoll(int delayMilliseconds) {
     return;
   }
   
-  //printBuffer();
-  printDelta();
-  //printMagnitude();
-  //Serial.println();
+  // PRINT DATA:
+  printBuffer();
+  // printDelta();
+  // printMagnitude();
+  // Serial.println();
   
+  // USE DELTA:
   // For now, use 1500 as delta ceiling.
-  float scale = getDelta() / 1500.0;
-  showColor(scale, BRIGHTNESS);
-  //transitionToColor(scale, 0.2, 5);
+  // float scale = getDelta() / 1500.0;
+
+  // USE VECTOR:
+  // LED color takes a value from 0.0 to 1.0. Calculate scale from the current vector.
+
+  // Resting vector (0.0).
+  double calibration = 925.0;
+  // Largest vector needed to hit max color (1.0).
+  double upperBound = 1600.0;
+  
+  double normalizedVector = abs(calibration - getMagnitude());
+  
+  double scale = normalizedVector / upperBound;
+  
+  Serial.print("n "); Serial.print((int)normalizedVector);
+  Serial.print("\t s: "); Serial.println(scale);
+  
+  // Change LED color.
+  showColor(scale, BRIGHTNESS * (scale + 0.2));
+  // transitionToColor(scale, 0.2, 5);
   
   // Advance the buffer.
   if (++bufferPosition >= bufferSize()) {
@@ -146,13 +165,15 @@ void printDelta() {
 
 // Gets the most recent vector magnitude.
 // http://en.wikipedia.org/wiki/Euclidean_vector#Length
-float getMagnitude() {
+double getMagnitude() {
   AccelReading currentReading  = getCurrentReading();
-  
-  float vector = currentReading.x * currentReading.x;
-  vector += currentReading.y * currentReading.y;
-  vector += currentReading.z * currentReading.z;
-  
+
+  double x = currentReading.x;
+  double y = currentReading.y;
+  double z = currentReading.z;
+
+  double vector = x * x + y * y + z * z;
+
   return sqrt(vector);
 }
 

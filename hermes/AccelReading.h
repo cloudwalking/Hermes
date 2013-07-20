@@ -1,6 +1,6 @@
 struct AccelReading {
-   int x;
-   int y;
-   int z;
+   double x;
+   double y;
+   double z;
 };
 typedef struct AccelReading AccelReading;
