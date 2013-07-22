@@ -1,17 +1,24 @@
+// Run parameters:
+#define WAIT_FOR_KEYBOARD 0 // Use keyboard to pause/resume program.
+#define BRIGHTNESS 1 // Max LED brightness.
+
+// LED parameters:
+#define LED_COUNT 16
+#define DATA_PIN 6
+#define CLOCK_PIN 12
+
 #include <math.h>
 
-// LED imports
+// LED imports.
 #include <SPI.h>
 #include "LPD8806.h"
 
-// Accel imports
+// Accel imports.
 #include <Wire.h>
 #include "Adafruit_LSM303.h"
 
+// Our custom data type.
 #include "AccelReading.h"
-
-#define WAIT_FOR_KEYBOARD 0
-#define BRIGHTNESS 1
 
 void setup() {
   if (WAIT_FOR_KEYBOARD) {
@@ -56,6 +63,7 @@ void pauseOnKeystroke() {
 Adafruit_LSM303 lsm; // Bridge to accelerometer hardware.
 AccelReading accelBuffer[10]; // Buffer for storing the last 10 readings.
 int bufferPosition; // Current read position of the buffer.
+double calibration;
 
 // Initialization.
 void accelSetup() {
@@ -98,21 +106,21 @@ void accelPoll(int delayMilliseconds) {
     return;
   }
   
-  // PRINT DATA:
+  /* PRINT DATA: */
   printBuffer();
   // printDelta();
   // printMagnitude();
   // Serial.println();
   
-  // USE DELTA:
+  /* USE DELTA: */
   // For now, use 1500 as delta ceiling.
   // float scale = getDelta() / 1500.0;
 
-  // USE VECTOR:
+  /* USE VECTOR: */
   // LED color takes a value from 0.0 to 1.0. Calculate scale from the current vector.
 
   // Resting vector (0.0).
-  double calibration = 925.0;
+  calibration = 925.0;
   // Largest vector needed to hit max color (1.0).
   double upperBound = 1600.0;
   
@@ -216,9 +224,6 @@ bool equalReadings(AccelReading a, AccelReading b) {
 // color //
 ///////////
 
-int LED_COUNT = 16;
-int DATA_PIN = 6;
-int CLOCK_PIN = 12;
 int COLOR_RANGE = 384;
 
 LPD8806 strip = LPD8806(LED_COUNT, DATA_PIN, CLOCK_PIN);
