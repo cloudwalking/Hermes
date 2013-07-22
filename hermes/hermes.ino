@@ -49,9 +49,10 @@ void pauseOnKeystroke() {
   if (Serial.available()) {
     Serial.read();
     Serial.println("Paused. Strike any key to resume...");
-    colorOff();
+    showColorOff();
     while (!Serial.available());
     Serial.read();
+    calibrate();
   }
 }
 
@@ -80,34 +81,53 @@ void accelSetup() {
     accelBuffer[i].z = 0;
   }
   
-  printBuffer();
+  calibrate();
+}
+
+void calibrate() {
+  calibration = 0;
+  
+  showCalibration();
+
+  while (1) {
+    if(!fillBuffer()) {
+      delay(10);
+      continue;
+    }
+    
+    bool pass = true;
+    double avg = 0;
+    for (int i = 0; i < bufferSize(); i++) {
+      double m = getMagnitude(accelBuffer[i]);
+      pass = pass && (abs(m - calibration) < 10);
+      avg += m;
+    }
+    
+    if (pass) {
+      if (WAIT_FOR_KEYBOARD) {
+        Serial.print("Calibration: ");
+        Serial.println(calibration);
+      }
+      return;
+    } else {
+      avg /= bufferSize();
+      calibration = avg;
+    }
+  }
 }
 
 // Gathers data from accelerometer into the buffer, pausing afterwards for the given delay.
 // Currently discards duplicate readings (when we're reading faster than the hardware is updating),
 // so delay might actually be irrelevant.
 void accelPoll(int delayMilliseconds) {
-  // Read from the hardware.
-  lsm.read();
-  
-  int newX = lsm.accelData.x;
-  int newY = lsm.accelData.y;
-  int newZ = lsm.accelData.z;
-
-  AccelReading *mutableCurrentReading = &accelBuffer[bufferPosition];
-
-  mutableCurrentReading->x = newX;
-  mutableCurrentReading->y = newY;
-  mutableCurrentReading->z = newZ;
-  
-  // If the new reading is the same as the previous reading, don't advance the buffer.
-  if (equalReadings(getPreviousReading(), getCurrentReading())) {
+  // Read new accelerometer data. If there is no new data, delay and return.
+  if (!fillBuffer()) {
     delay(delayMilliseconds);
     return;
   }
   
   /* PRINT DATA: */
-  printBuffer();
+  // printBuffer();
   // printDelta();
   // printMagnitude();
   // Serial.println();
@@ -119,28 +139,65 @@ void accelPoll(int delayMilliseconds) {
   /* USE VECTOR: */
   // LED color takes a value from 0.0 to 1.0. Calculate scale from the current vector.
 
-  // Resting vector (0.0).
-  calibration = 925.0;
   // Largest vector needed to hit max color (1.0).
   double upperBound = 1600.0;
   
-  double normalizedVector = abs(calibration - getMagnitude());
+  double normalizedVector = abs(calibration - getMagnitude(getCurrentReading()));
   
   double scale = normalizedVector / upperBound;
   
-  Serial.print("n "); Serial.print((int)normalizedVector);
-  Serial.print("\t s: "); Serial.println(scale);
+  // Serial.print("n "); Serial.print((int)normalizedVector);
+  // Serial.print("\t s: "); Serial.println(scale);
   
   // Change LED color.
   showColor(scale, BRIGHTNESS * (scale + 0.2));
   // transitionToColor(scale, 0.2, 5);
   
+  delay(delayMilliseconds);
+}
+
+// Gets the vector for the given reading.
+double getVector(AccelReading reading) {
+  double normalizedVector = abs(calibration - getMagnitude(reading));
+  return normalizedVector;
+}
+
+//////////
+
+// This may or may not fill the next buffer position. If the accelerometer hasn't
+// processed a new reading since the last buffer, this function immediately exits,
+// returning false.
+// Otherwise, if the accelerometer has read new data, this function advances the
+// buffer position, fills the buffer with accelerometer data, and returns true.
+bool fillBuffer() {
+  // Read from the hardware.
+  lsm.read();
+  
+  AccelReading newReading;
+  newReading.x = lsm.accelData.x;
+  newReading.y = lsm.accelData.y;
+  newReading.z = lsm.accelData.z;
+  
+  // The accelerometer hasn't processed a new reading since the last buffer.
+  // Do nothing and return false.
+  if (equalReadings(getCurrentReading(), newReading)) {
+    return false;
+  }
+  
+  // The accelerometer has read new data.
+  
   // Advance the buffer.
   if (++bufferPosition >= bufferSize()) {
     bufferPosition = 0;
   }
+
+  AccelReading *mutableCurrentReading = &accelBuffer[bufferPosition];
   
-  delay(delayMilliseconds);
+  mutableCurrentReading->x = newReading.x;
+  mutableCurrentReading->y = newReading.y;
+  mutableCurrentReading->z = newReading.z;
+  
+  return true;
 }
 
 //////////
@@ -171,14 +228,12 @@ void printDelta() {
   Serial.print(getDelta()); Serial.println();
 }
 
-// Gets the most recent vector magnitude.
+// Gets the vector magnitude for the given reading.
 // http://en.wikipedia.org/wiki/Euclidean_vector#Length
-double getMagnitude() {
-  AccelReading currentReading  = getCurrentReading();
-
-  double x = currentReading.x;
-  double y = currentReading.y;
-  double z = currentReading.z;
+double getMagnitude(AccelReading reading) {
+  double x = reading.x;
+  double y = reading.y;
+  double z = reading.z;
 
   double vector = x * x + y * y + z * z;
 
@@ -186,7 +241,7 @@ double getMagnitude() {
 }
 
 void printMagnitude() {
-  Serial.println(getMagnitude());
+  Serial.println(getMagnitude(getCurrentReading()));
 }
 
 // Prints the latest buffer reading to the screen.
@@ -321,9 +376,30 @@ uint32_t color(uint16_t color, float brightness)  {
   return strip.Color(r, g, b);
 }
 
+void showColorOff() {
+  colorOff();
+  strip.show();
+}
+
 void colorOff() {
   for (int i = 0; i < strip.numPixels(); i++) {
     strip.setPixelColor(i, 0);
   }
+}
+
+// Show the calibration colors.
+void showCalibration() {
+  colorOff();
+
+  int mid = LED_COUNT / 2;
+  float brightness = 0.3;
+  
+  // Red
+  strip.setPixelColor(mid - 1, strip.Color(127 * brightness, 0, 0));
+  // Green
+  strip.setPixelColor(mid, strip.Color(0, 127 * brightness, 0));
+  // Blue
+  strip.setPixelColor(mid + 1, strip.Color(0, 0, 127 * brightness));
+  
   strip.show();
 }
