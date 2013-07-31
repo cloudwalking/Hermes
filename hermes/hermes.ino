@@ -40,9 +40,9 @@ void loop() {
     pauseOnKeystroke();
   }
 
-  // showColors();
-
-  accelPoll(10);
+  accelPoll();
+  runLED();
+  delay(10);
 }
 
 void pauseOnKeystroke() {
@@ -74,7 +74,7 @@ void accelSetup() {
   
   bufferPosition = 0;
 
-  // Initialize the entire buffer.
+  // Initialize the full buffer to zero.
   for (int i = 0; i < bufferSize(); i++) {
     accelBuffer[i].x = 0;
     accelBuffer[i].y = 0;
@@ -116,13 +116,11 @@ void calibrate() {
   }
 }
 
-// Gathers data from accelerometer into the buffer, pausing afterwards for the given delay.
-// Currently discards duplicate readings (when we're reading faster than the hardware is updating),
-// so delay might actually be irrelevant.
-void accelPoll(int delayMilliseconds) {
+// Gathers data from accelerometer into the buffer. Only writes to the buffer
+// if the hardware has gathered data since we last wrote to the buffer.
+void accelPoll() {
   // Read new accelerometer data. If there is no new data, delay and return.
   if (!fillBuffer()) {
-    delay(delayMilliseconds);
     return;
   }
   
@@ -131,29 +129,6 @@ void accelPoll(int delayMilliseconds) {
   // printDelta();
   // printMagnitude();
   // Serial.println();
-  
-  /* USE DELTA: */
-  // For now, use 1500 as delta ceiling.
-  // float scale = getDelta() / 1500.0;
-
-  /* USE VECTOR: */
-  // LED color takes a value from 0.0 to 1.0. Calculate scale from the current vector.
-
-  // Largest vector needed to hit max color (1.0).
-  double upperBound = 1600.0;
-  
-  double normalizedVector = abs(calibration - getMagnitude(getCurrentReading()));
-  
-  double scale = normalizedVector / upperBound;
-  
-  // Serial.print("n "); Serial.print((int)normalizedVector);
-  // Serial.print("\t s: "); Serial.println(scale);
-  
-  // Change LED color.
-  showColor(scale, BRIGHTNESS * (scale + 0.2));
-  // transitionToColor(scale, 0.2, 5);
-  
-  delay(delayMilliseconds);
 }
 
 // Gets the vector for the given reading.
@@ -291,6 +266,29 @@ void colorSetup() {
   strip.show();
 }
 
+void runLED() {
+  /* USE DELTA: */
+  // For now, use 1500 as delta ceiling.
+  // float scale = getDelta() / 1500.0;
+
+  /* USE VECTOR: */
+  // LED color takes a value from 0.0 to 1.0. Calculate scale from the current vector.
+
+  // Largest vector needed to hit max color (1.0).
+  double upperBound = 1600.0;
+  
+  double normalizedVector = abs(calibration - getMagnitude(getCurrentReading()));
+  
+  double scale = normalizedVector / upperBound;
+  
+  // Serial.print("n "); Serial.print((int)normalizedVector);
+  // Serial.print("\t s: "); Serial.println(scale);
+  
+  // Change LED color.
+  showColor(scale, BRIGHTNESS * (scale + 0.2));
+  // transitionToColor(scale, 0.2, 5);
+}
+
 // Sets the strip all one color.
 // Scale parameter is a value 0.0 to 1.0,
 // representing how far on the rainbow to go.
@@ -333,7 +331,7 @@ void transitionToColor(float scale, float brightness, int speedMilliseconds) {
 }
 
 // Shows the color progression.
-void showColors() {
+void showColorProgression() {
   for (int j = 0; j < 384; j++) {
     for (int i = 0; i < strip.numPixels(); i++) {
       strip.setPixelColor(i, color(j, 0.5));
