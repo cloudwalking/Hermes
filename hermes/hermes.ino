@@ -1,6 +1,6 @@
 // Run parameters:
+#define MAX_BRIGHTNESS 1 // Max LED brightness.
 #define WAIT_FOR_KEYBOARD 0 // Use keyboard to pause/resume program.
-#define BRIGHTNESS 1 // Max LED brightness.
 
 // LED parameters:
 #define LED_COUNT 16
@@ -8,12 +8,12 @@
 #define CLOCK_PIN 12
 
 // Animation parameters:
-#define CRAWL_SPEED 10
+#define CRAWL_SPEED_MS 25
 
 // Debug parameters:
 #define PRINT_LOOP_TIME 0
 
-#include <time.h>
+///////////////////////////////////////////////////////////////////
 
 // LED imports.
 #include <SPI.h>
@@ -41,17 +41,21 @@ void setup() {
   accelSetup();
 }
 
-unsigned long before = 0;
 void loop() {
+  loopDebug();
+
+  accelPoll();
+  updateLED();
+
+  //delay(10);
+}
+
+// Debug functions controlled by run/debug parameters.
+unsigned long before = 0;
+void loopDebug() {
   if (WAIT_FOR_KEYBOARD) {
     pauseOnKeystroke();
   }
-
-  accelPoll();
-  runLED();
-
-  //delay(10);
-  
   if (PRINT_LOOP_TIME) {
     unsigned long now = millis();
     Serial.println(now - before);
@@ -70,6 +74,9 @@ void pauseOnKeystroke() {
   }
 }
 
+///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
 
 ///////////
 // accel //
@@ -151,7 +158,7 @@ double getVector(AccelReading reading) {
   return normalizedVector;
 }
 
-//////////
+///////////////////////////////////////////////////////////////////
 
 // This may or may not fill the next buffer position. If the accelerometer hasn't
 // processed a new reading since the last buffer, this function immediately exits,
@@ -189,7 +196,7 @@ bool fillBuffer() {
   return true;
 }
 
-//////////
+///////////////////////////////////////////////////////////////////
 
 // Gets the average difference between the latest buffer and previous buffer.
 int getDelta() {
@@ -240,7 +247,7 @@ void printBuffer() {
   Serial.print(accelBuffer[bufferPosition].z); Serial.println();
 }
 
-//////////
+///////////////////////////////////////////////////////////////////
 
 // Returns the number of items held by the buffer.
 int bufferSize() {
@@ -263,54 +270,90 @@ bool equalReadings(AccelReading a, AccelReading b) {
   return a.x == b.x && a.y == b.y && a.z == b.z;
 }
 
+///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
 
 ///////////
 // color //
 ///////////
 
 int COLOR_RANGE = 384;
-uint32_t lastColor = 0;
+uint32_t lastColor;
+unsigned long lastCrawl;
+uint32_t lightArray[LED_COUNT];
 
 LPD8806 strip = LPD8806(LED_COUNT, DATA_PIN, CLOCK_PIN);
 
 void colorSetup() {
+  lastColor = 0;
+  lastCrawl = 0;
+  
   // Turn the strip on.
   strip.begin();
-  
-  // Refresh the strip.
   strip.show();
+  
+  // Initialize the LED buffer.
+  for (int i = 0; i < LED_COUNT; i++) {
+    lightArray[i] = 0;
+  }
 }
 
-void runLED() {
-  /* USE DELTA: */
-  // For now, use 1500 as delta ceiling.
-  // float scale = getDelta() / 1500.0;
-
-  /* USE VECTOR: */
+void updateLED() {
   // LED color takes a value from 0.0 to 1.0. Calculate scale from the current vector.
 
   // Largest vector needed to hit max color (1.0).
   double upperBound = 1600.0;
-  
   double normalizedVector = abs(calibration - getMagnitude(getCurrentReading()));
-  
   double scale = normalizedVector / upperBound;
   
-  // Serial.print("n "); Serial.print((int)normalizedVector);
-  // Serial.print("\t s: "); Serial.println(scale);
+  uint32_t pixelColor = pixelColorForScale(scale);
   
-  // Change LED color.
-  showColor(scale, BRIGHTNESS * (scale + 0.2));
-  // transitionToColor(scale, 0.2, 5);
+  // Change LED strip color.
+  //showColor(scale);
+  
+  crawlColor(pixelColor);
+}
+
+// "Crawls" the given color along the strip.
+// This always sets LED[0] to the given color.
+// After CRAWL_SPEED_MS milliseconds,
+// we set LED[n + 1] = LED[n] for each LED.
+void crawlColor(uint32_t color) {
+  
+  // Set the head pixel to the new color.
+  uint32_t head = lightArray[0];
+  lightArray[0] = color;
+  
+  unsigned long now = millis();
+  
+  // Shift the array if it's been long enough since last shifting,
+  // or if a new color arrives.
+  bool shouldUpdate = 
+      (now - lastCrawl > CRAWL_SPEED_MS)
+      || (color != head);
+
+  if (shouldUpdate) {
+    lastCrawl = now;
+    
+    // Shift the array.
+    for (int i = LED_COUNT - 1; i > 0; --i) {
+      lightArray[i] = lightArray[i - 1];
+    }
+
+    // Display the array.
+    for (int i = 0; i < LED_COUNT; i++) {
+      strip.setPixelColor(i, lightArray[i]);
+    }
+    strip.show();
+  }
 }
 
 // Sets the strip all one color.
 // Scale parameter is a value 0.0 to 1.0,
 // representing how far on the rainbow to go.
-// Brightness is measured 0.0 to 1.0.
-void showColor(float scale, float brightness) {
-  int c = COLOR_RANGE * scale;
-  uint32_t pixelColor = color(c, brightness);
+void showColor(float scale) {
+  uint32_t pixelColor = pixelColorForScale(scale);
 
   if (pixelColor == lastColor) {
     // No change since we last set the pixels; don't bother changing them.
@@ -320,37 +363,20 @@ void showColor(float scale, float brightness) {
 
   // Serial.print("Show "); Serial.print(scale); Serial.println(c);
   for (int i = 0; i < LED_COUNT; i++) {
-    strip.setPixelColor(i, pixelColor);
+   strip.setPixelColor(i, pixelColor);
   }
   strip.show();
 }
 
-// Transitions the strip to all one color.
-// Scale parameter is a value 0.0 to 1.0,
-// representing how far on the rainbow to go.
-// Brightness is measured 0.0 to 1.0.
-// Speed is measured in milliseconds per step (5 steps).
-void transitionToColor(float scale, float brightness, int speedMilliseconds) {
-  static int STEPS = 5;
-  static int currentColor = 0;
+// Returns a pixel color for use by strip.setPixelColor().
+// Automatically adjusts brightness.
+// Takes a scale, from 0.0 to 1.0, indicating progression
+// through the color rainbow.
+uint32_t pixelColorForScale(double scale) {
+  float brightness = MAX_BRIGHTNESS * (scale + 0.2);
+  int c = COLOR_RANGE * scale; // Intentionally round to an int.
 
-  int newColor = COLOR_RANGE * scale;
-  float step = (newColor - currentColor) / STEPS;
-
-  for (int x = 0; x < STEPS; x++) {
-    int stepColor = currentColor + step * x;
-    
-    for (int i = 0; i < LED_COUNT; i++) {
-      strip.setPixelColor(i, color(stepColor, brightness));
-    }
-  }
-  
-  strip.show();
-  
-  // Store for next time.
-  currentColor = newColor;
-  
-  delay(speedMilliseconds);
+  return color(c, brightness);
 }
 
 // Shows the color progression.
