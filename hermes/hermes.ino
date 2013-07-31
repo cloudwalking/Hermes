@@ -255,6 +255,7 @@ bool equalReadings(AccelReading a, AccelReading b) {
 ///////////
 
 int COLOR_RANGE = 384;
+int lastColor = 0;
 
 LPD8806 strip = LPD8806(LED_COUNT, DATA_PIN, CLOCK_PIN);
 
@@ -295,9 +296,17 @@ void runLED() {
 // Brightness is measured 0.0 to 1.0.
 void showColor(float scale, float brightness) {
   int c = COLOR_RANGE * scale;
+  pixelColor = color(c, brightness);
+
+  if (pixelColor == lastColor) {
+    // No change since we last set the pixels; don't bother changing them.
+    return;
+  }
+  lastColor = pixelColor;
+
   // Serial.print("Show "); Serial.print(scale); Serial.println(c);
   for (int i = 0; i < LED_COUNT; i++) {
-    strip.setPixelColor(i, color(c, brightness));
+    strip.setPixelColor(i, pixelColor);
   }
   strip.show();
 }
