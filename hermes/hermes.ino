@@ -7,7 +7,13 @@
 #define DATA_PIN 6
 #define CLOCK_PIN 12
 
-#include <math.h>
+// Animation parameters:
+#define CRAWL_SPEED 10
+
+// Debug parameters:
+#define PRINT_LOOP_TIME 0
+
+#include <time.h>
 
 // LED imports.
 #include <SPI.h>
@@ -35,6 +41,7 @@ void setup() {
   accelSetup();
 }
 
+unsigned long before = 0;
 void loop() {
   if (WAIT_FOR_KEYBOARD) {
     pauseOnKeystroke();
@@ -42,7 +49,14 @@ void loop() {
 
   accelPoll();
   runLED();
-  delay(10);
+
+  //delay(10);
+  
+  if (PRINT_LOOP_TIME) {
+    unsigned long now = millis();
+    Serial.println(now - before);
+    before = millis();
+  }
 }
 
 void pauseOnKeystroke() {
