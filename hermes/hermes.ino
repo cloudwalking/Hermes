@@ -8,10 +8,14 @@
 #define CLOCK_PIN 12
 
 // Animation parameters:
-#define CRAWL_SPEED_MS 30 // ~15 ms is minimum
+// ~15 ms minimum crawl speed for normal mode, 2 ms for superfast hack mode.
+#define CRAWL_SPEED_MS 40 // ~15 ms is minimum
 
 // Debug parameters:
 #define PRINT_LOOP_TIME 0
+
+// Advanced:
+#define SUPERFAST_LED_HACK 1 // Requires specific configuration, see stripShow().
 
 ///////////////////////////////////////////////////////////////////
 
@@ -32,10 +36,6 @@ void setup() {
 
     // Wait for serial to initalize.
     while (!Serial) { }
-    
-    #if defined(__AVR_ATmega32U4__)
-      Serial.println("__AVR_ATmega32U4__");
-    #endif
 
   	Serial.println("Strike any key to start...");
 
@@ -45,6 +45,8 @@ void setup() {
   	// Clear the serial buffer.
     Serial.read();
   }
+  
+  checkSuperfastHack();
   
   colorSetup();
   
@@ -71,6 +73,19 @@ void loopDebug() {
     Serial.println(now - before);
     before = millis();
   }
+}
+
+void checkSuperfastHack() {
+  #if SUPERFAST_LED_HACK
+    #ifdef _COMPILE_TIME_LEDS_
+      Serial.println("Using superfast LED hack.");
+    #elif
+      // Wait for serial to initalize.
+      while (!Serial) { }
+      Serial.print("WARNING: You need to reinstall the LPD8806 library ");
+      Serial.println("with the version included here.");
+    #endif
+  #endif
 }
 
 void pauseOnKeystroke() {
@@ -469,6 +484,18 @@ void showCalibration() {
 }
 
 void stripShow() {
-  // strip.show();
-  strip.showCompileTime<6, 7>(PORTD, PORTD);
+  #if SUPERFAST_LED_HACK
+    #ifdef _COMPILE_TIME_LEDS_
+      // These settings are for Leonardo (ATmega32U4) with
+      // LED pins data=6, clock=12.
+      // Customize these values.
+      strip.showCompileTime<6, 7>(PORTD, PORTD);
+    #elif
+      // Can't actually use superfast hack, it isn't installed properly.
+      strip.show();
+    #endif
+    return;
+  #endif
+
+  strip.show();
 }
