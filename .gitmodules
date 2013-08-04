@@ -1,3 +1,6 @@
 [submodule "LSM303"]
 	path = LSM303
 	url = https://github.com/adafruit/Adafruit_LSM303.git
+[submodule "LPD8806-Fast"]
+	path = LPD8806-Fast
+	url = git://github.com/cloudwalking/LPD8806-Fast.git
