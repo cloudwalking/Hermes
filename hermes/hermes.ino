@@ -1,20 +1,21 @@
-// Run parameters:
+/* Run parameters: */
 #define MAX_BRIGHTNESS 1 // Max LED brightness.
 #define WAIT_FOR_KEYBOARD 0 // Use keyboard to pause/resume program.
 
-// LED parameters:
+/* LED parameters: */
 #define LED_COUNT 16
 #define DATA_PIN 6
 #define CLOCK_PIN 12
 
-// Animation parameters:
-// ~15 ms minimum crawl speed for normal mode, 2 ms for superfast hack mode.
-#define CRAWL_SPEED_MS 40 // ~15 ms is minimum
+/* Animation parameters: */
+// ~15 ms minimum crawl speed for normal mode,
+// ~2 ms minimum for superfast hack mode.
+#define CRAWL_SPEED_MS 40
 
-// Debug parameters:
+/* Debug parameters: */
 #define PRINT_LOOP_TIME 0
 
-// Advanced:
+/* Advanced: */
 #define SUPERFAST_LED_HACK 1 // Requires specific configuration, see stripShow().
 
 ///////////////////////////////////////////////////////////////////
@@ -486,9 +487,9 @@ void showCalibration() {
 void stripShow() {
   #if SUPERFAST_LED_HACK
     #ifdef _COMPILE_TIME_LEDS_
-      // These settings are for Leonardo (ATmega32U4) with
+      // These settings are for Leonardo (ATmega32u4) with
       // LED pins data=6, clock=12.
-      // Customize these values.
+      // See CompileTimeLEDs.h for more info.
       strip.showCompileTime<6, 7>(PORTD, PORTD);
     #elif
       // Can't actually use superfast hack, it isn't installed properly.
