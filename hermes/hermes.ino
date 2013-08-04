@@ -8,7 +8,7 @@
 #define CLOCK_PIN 12
 
 // Animation parameters:
-#define CRAWL_SPEED_MS 25
+#define CRAWL_SPEED_MS 30 // ~15 ms is minimum
 
 // Debug parameters:
 #define PRINT_LOOP_TIME 0
@@ -29,10 +29,20 @@
 void setup() {
   if (WAIT_FOR_KEYBOARD) {
     Serial.begin(9600);
-    while (!Serial) { }		// Wait for serial to initalize.
+
+    // Wait for serial to initalize.
+    while (!Serial) { }
+    
+    #if defined(__AVR_ATmega32U4__)
+      Serial.println("__AVR_ATmega32U4__");
+    #endif
 
   	Serial.println("Strike any key to start...");
+
+  	// Wait for the next keystroke.
   	while (!Serial.available()) { }
+
+  	// Clear the serial buffer.
     Serial.read();
   }
   
@@ -65,12 +75,19 @@ void loopDebug() {
 
 void pauseOnKeystroke() {
   if (Serial.available()) {
+    // Clear the serial buffer.
     Serial.read();
+
     Serial.println("Paused. Strike any key to resume...");
+
+    // Turn all LEDs off.
     showColorOff();
-    while (!Serial.available());
+
+    // Wait for the next keystroke.
+    while (!Serial.available()) { }
+
+    // Clear the serial buffer.
     Serial.read();
-    calibrate();
   }
 }
 
@@ -291,7 +308,7 @@ void colorSetup() {
   
   // Turn the strip on.
   strip.begin();
-  strip.show();
+  stripShow();
   
   // Initialize the LED buffer.
   for (int i = 0; i < LED_COUNT; i++) {
@@ -345,7 +362,7 @@ void crawlColor(uint32_t color) {
     for (int i = 0; i < LED_COUNT; i++) {
       strip.setPixelColor(i, lightArray[i]);
     }
-    strip.show();
+    stripShow();
   }
 }
 
@@ -365,7 +382,7 @@ void showColor(float scale) {
   for (int i = 0; i < LED_COUNT; i++) {
    strip.setPixelColor(i, pixelColor);
   }
-  strip.show();
+  stripShow();
 }
 
 // Returns a pixel color for use by strip.setPixelColor().
@@ -385,14 +402,14 @@ void showColorProgression() {
     for (int i = 0; i < strip.numPixels(); i++) {
       strip.setPixelColor(i, color(j, 0.5));
     }
-    strip.show();
+    stripShow();
     delay(1);
   }
   
   for (int i = 0; i < strip.numPixels(); i++) {
     strip.setPixelColor(i, 0);
   }
-  strip.show();
+  stripShow();
   delay(1);
 }
 
@@ -425,7 +442,7 @@ uint32_t color(uint16_t color, float brightness)  {
 
 void showColorOff() {
   colorOff();
-  strip.show();
+  stripShow();
 }
 
 void colorOff() {
@@ -448,5 +465,10 @@ void showCalibration() {
   // Blue
   strip.setPixelColor(mid + 1, strip.Color(0, 0, 127 * brightness));
   
-  strip.show();
+  stripShow();
+}
+
+void stripShow() {
+  // strip.show();
+  strip.showCompileTime<6, 7>(PORTD, PORTD);
 }
