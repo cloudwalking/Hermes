@@ -17,6 +17,7 @@
 
 /* Advanced: */
 #define SUPERFAST_LED_HACK 1 // Requires specific configuration, see stripShow().
+#define ONBOARD_LED_PIN 7 // Pin D7 has an LED connected on FLORA.
 
 ///////////////////////////////////////////////////////////////////
 
@@ -119,6 +120,8 @@ Adafruit_LSM303 lsm; // Bridge to accelerometer hardware.
 AccelReading accelBuffer[10]; // Buffer for storing the last 10 readings.
 int bufferPosition; // Current read position of the buffer.
 double calibration;
+unsigned long calibrationLEDTime;
+bool calibrationLEDOn;
 
 // Initialization.
 void accelSetup() {
@@ -140,15 +143,27 @@ void accelSetup() {
 
 void calibrate() {
   calibration = 0;
+  calibrationLEDTime = 0;
+  calibrationLEDOn = false;
   
   showCalibration();
 
   while (1) {
+    // Update onboard LED.
+    unsigned long now = millis();
+    if (now - calibrationLEDTime > 250) {
+      calibrationLEDTime = now;
+      calibrationLEDOn = !calibrationLEDOn;
+      digitalWrite(ONBOARD_LED_PIN, calibrationLEDOn ? HIGH : LOW);
+    }
+    
+    // Fill the buffer.
     if(!fillBuffer()) {
       delay(10);
       continue;
     }
     
+    // Check to see if we're done.
     bool pass = true;
     double avg = 0;
     for (int i = 0; i < bufferSize(); i++) {
@@ -162,12 +177,15 @@ void calibrate() {
         Serial.print("Calibration: ");
         Serial.println(calibration);
       }
-      return;
+      break;
     } else {
       avg /= bufferSize();
       calibration = avg;
     }
   }
+  
+  // Turn the calibration light off.
+  digitalWrite(ONBOARD_LED_PIN, LOW);
 }
 
 // Gathers data from accelerometer into the buffer. Only writes to the buffer
