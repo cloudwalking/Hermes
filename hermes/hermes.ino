@@ -1,5 +1,5 @@
 /* Run parameters: */
-#define MAX_BRIGHTNESS 1 // Max LED brightness.
+#define MAX_BRIGHTNESS 0.75 // Max LED brightness.
 #define WAIT_FOR_KEYBOARD 0 // Use keyboard to pause/resume program.
 
 /* LED parameters: */
@@ -10,7 +10,7 @@
 /* Animation parameters: */
 // ~15 ms minimum crawl speed for normal mode,
 // ~2 ms minimum for superfast hack mode.
-#define CRAWL_SPEED_MS 40
+#define CRAWL_SPEED_MS 12
 
 /* Debug parameters: */
 #define PRINT_LOOP_TIME 0
@@ -60,8 +60,6 @@ void loop() {
 
   accelPoll();
   updateLED();
-
-  //delay(10);
 }
 
 // Debug functions controlled by run/debug parameters.
