@@ -3,14 +3,20 @@
 #define WAIT_FOR_KEYBOARD 0 // Use keyboard to pause/resume program.
 
 /* LED parameters: */
-#define LED_COUNT 16
+#define LED_COUNT 22
 #define DATA_PIN 6
 #define CLOCK_PIN 12
 
 /* Animation parameters: */
 // ~15 ms minimum crawl speed for normal mode,
 // ~2 ms minimum for superfast hack mode.
-#define CRAWL_SPEED_MS 12
+#define CRAWL_SPEED_MS 14
+
+/* Sleeping parameters: */
+#define SLEEP_BRIGHTNESS 0.25
+#define SLEEP_CYCLE_MS 5000 // 5 second breathing cycle.
+#define SLEEP_WAIT_TIME_MS 5000 // No movement for 5 seconds triggers breathing.
+#define SLEEP_SENSITIVITY 40
 
 /* Debug parameters: */
 #define PRINT_LOOP_TIME 0
@@ -82,8 +88,7 @@ void checkSuperfastHack() {
     #elif
       // Wait for serial to initalize.
       while (!Serial) { }
-      Serial.print("WARNING: You need to reinstall the LPD8806 library ");
-      Serial.println("with the version included here.");
+      Serial.println("WARNING: You need to install the LPD8806Fast library.");
     #endif
   #endif
 }
@@ -117,9 +122,13 @@ void pauseOnKeystroke() {
 Adafruit_LSM303 lsm; // Bridge to accelerometer hardware.
 AccelReading accelBuffer[10]; // Buffer for storing the last 10 readings.
 int bufferPosition; // Current read position of the buffer.
-double calibration;
+
+double calibration; // Baseline for accelerometer data.
 unsigned long calibrationLEDTime;
 bool calibrationLEDOn;
+
+// For breathing, track the time of the last significant movement.
+unsigned long lastSignificantMovementTime;
 
 // Initialization.
 void accelSetup() {
@@ -189,7 +198,7 @@ void calibrate() {
 // Gathers data from accelerometer into the buffer. Only writes to the buffer
 // if the hardware has gathered data since we last wrote to the buffer.
 void accelPoll() {
-  // Read new accelerometer data. If there is no new data, delay and return.
+  // Read new accelerometer data. If there is no new data, return immediately.
   if (!fillBuffer()) {
     return;
   }
@@ -319,6 +328,7 @@ bool equalReadings(AccelReading a, AccelReading b) {
   return a.x == b.x && a.y == b.y && a.z == b.z;
 }
 
+
 ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////
@@ -361,7 +371,11 @@ void updateLED() {
   // Change LED strip color.
   //showColor(scale);
   
-  crawlColor(pixelColor);
+  if (sleep()) {
+    breathe(strip);
+  } else {
+    crawlColor(pixelColor);
+  }
 }
 
 // "Crawls" the given color along the strip.
@@ -515,4 +529,78 @@ void stripShow() {
   #endif
 
   strip.show();
+}
+
+///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
+
+///////////
+// sleep //
+///////////
+bool sleeping = false;
+
+bool sleep() {
+  unsigned long now = millis();
+
+  // See if this movement is significant, aka enough to wake us from sleep.
+  double m = getMagnitude(getCurrentReading());
+  if (abs(calibration - m) > SLEEP_SENSITIVITY) {
+    lastSignificantMovementTime = now;
+  }
+  
+  // Last significant movement time needs to be longer than sleep wait time.
+  if (now - lastSignificantMovementTime < SLEEP_WAIT_TIME_MS) {
+    // Haven't waited long enough.
+    return false;
+  }
+  
+  // Only start sleeping on the sleep period.
+  if (!sleeping && (now % SLEEP_CYCLE_MS != 0)) {
+    return false;
+  }
+  
+  sleeping = true;
+
+  return true;
+}
+
+///////////////////////////////////////////////////////////////////
+
+const uint8_t KEYFRAMES[]  = {
+  // Rising
+  20, 21, 22, 24, 26, 28, 31, 34, 38, 41, 45, 50, 55, 60, 66, 73, 80, 87, 95,
+  103, 112, 121, 131, 141, 151, 161, 172, 182, 192, 202, 211, 220, 228, 236,
+  242, 247, 251, 254, 255,
+
+  // Falling
+  254, 251, 247, 242, 236, 228, 220, 211, 202, 192, 182, 172, 161, 151, 141,
+  131, 121, 112, 103, 95, 87, 80, 73, 66, 60, 55, 50, 45, 41, 38, 34, 31, 28,
+  26, 24, 22, 21, 20,
+  20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 
+};
+
+unsigned long lastBreath = 0.0;
+int keyframePointer = 0;
+
+void breathe(LPD8806 strip) {
+  int numKeyframes = sizeof(KEYFRAMES) - 1;
+  float period = SLEEP_CYCLE_MS / numKeyframes;
+  unsigned long now = millis();
+  
+  if ((now - lastBreath) > period) {
+    lastBreath = now;
+
+    for (int i = 0; i < strip.numPixels(); i++) {
+      uint8_t color = (SLEEP_BRIGHTNESS * 127 * KEYFRAMES[keyframePointer]) / 256;
+      strip.setPixelColor(i, color, 0, 0);
+    }
+    strip.show();   
+
+    // Increment the keyframe pointer.
+    if (++keyframePointer > numKeyframes) {
+      // Reset to 0 after the last keyframe.
+      keyframePointer = 0;
+    }   
+  }
 }
