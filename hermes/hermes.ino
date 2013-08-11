@@ -552,11 +552,15 @@ bool sleep() {
   // Last significant movement time needs to be longer than sleep wait time.
   if (now - lastSignificantMovementTime < SLEEP_WAIT_TIME_MS) {
     // Haven't waited long enough.
+    resetBreathe();
+    sleeping = false;
     return false;
   }
   
   // Only start sleeping on the sleep period.
   if (!sleeping && (now % SLEEP_CYCLE_MS != 0)) {
+    resetBreathe();
+    sleeping = false;
     return false;
   }
   
@@ -582,6 +586,10 @@ const uint8_t KEYFRAMES[]  = {
 
 unsigned long lastBreath = 0.0;
 int keyframePointer = 0;
+
+void resetBreathe() {
+  keyframePointer = 0;
+}
 
 void breathe(LPD8806 strip) {
   int numKeyframes = sizeof(KEYFRAMES) - 1;
