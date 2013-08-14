@@ -1,5 +1,6 @@
 /* Run parameters: */
 #define MAX_BRIGHTNESS 0.75 // Max LED brightness.
+#define MIN_BRIGHTNESS 0.3
 #define WAIT_FOR_KEYBOARD 0 // Use keyboard to pause/resume program.
 
 /* LED parameters: */
@@ -463,7 +464,7 @@ void showColor(float scale) {
 // Takes a scale, from 0.0 to 1.0, indicating progression
 // through the color rainbow.
 uint32_t pixelColorForScale(double scale) {
-  float brightness = MAX_BRIGHTNESS * (scale + 0.2);
+  float brightness = MAX_BRIGHTNESS * (scale + MIN_BRIGHTNESS);
   int c = COLOR_RANGE * scale; // Intentionally round to an int.
 
   return color(c, brightness);
