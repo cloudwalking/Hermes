@@ -11,6 +11,12 @@
 // ~15 ms minimum crawl speed for normal mode,
 // ~2 ms minimum for superfast hack mode.
 #define CRAWL_SPEED_MS 14
+// Emulate two strips by starting the crawl in the
+// middle of the strip and crawling both ways.
+#define ENABLE_SPLIT_STRIP 1
+// Center LED, aka LED #0.
+#define SPLIT_STRIP_CENTER 11
+
 
 /* Sleeping parameters: */
 #define SLEEP_BRIGHTNESS 0.25
@@ -396,20 +402,41 @@ void crawlColor(uint32_t color) {
       (now - lastCrawl > CRAWL_SPEED_MS)
       || (color != head);
 
-  if (shouldUpdate) {
-    lastCrawl = now;
-    
-    // Shift the array.
-    for (int i = LED_COUNT - 1; i > 0; --i) {
-      lightArray[i] = lightArray[i - 1];
-    }
-
-    // Display the array.
-    for (int i = 0; i < LED_COUNT; i++) {
-      strip.setPixelColor(i, lightArray[i]);
-    }
-    stripShow();
+  if (!shouldUpdate) {
+    return;
   }
+
+  lastCrawl = now;
+  
+  // Shift the array.
+  for (int i = LED_COUNT - 1; i > 0; --i) {
+    lightArray[i] = lightArray[i - 1];
+  }
+
+  if (ENABLE_SPLIT_STRIP) {
+    int centerLED = SPLIT_STRIP_CENTER;
+  
+    // Crawl 'low' side (center - 1 to zero)
+    uint32_t *pixelColor = lightArray;
+    for (int led = centerLED - 1; led >= 0; led--) {
+      strip.setPixelColor(led, *pixelColor++);
+    }
+  
+    // Crawl 'high' side (center to LED_COUNT)
+    pixelColor = lightArray;
+    for (int led = centerLED; led < LED_COUNT; led++) {
+      strip.setPixelColor(led, *pixelColor++);
+    }
+  
+    stripShow();
+    
+    return;
+  }
+  
+  for (int i = 0; i < LED_COUNT; i++) {
+    strip.setPixelColor(i, lightArray[i]);
+  }
+  stripShow();
 }
 
 // Sets the strip all one color.
