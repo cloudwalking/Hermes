@@ -18,7 +18,6 @@
 // Center LED, aka LED #0.
 #define SPLIT_STRIP_CENTER 11
 
-
 /* Sleeping parameters: */
 #define SLEEP_BRIGHTNESS 0.25
 #define SLEEP_CYCLE_MS 5000 // 5 second breathing cycle.
@@ -36,11 +35,11 @@
 
 // LED imports.
 #include <SPI.h>
-#include "LPD8806.h"
+#include <LPD8806.h>
 
 // Accel imports.
 #include <Wire.h>
-#include "Adafruit_LSM303.h"
+#include <Adafruit_LSM303_Old.h>
 
 // Our custom data type.
 #include "AccelReading.h"
@@ -126,7 +125,7 @@ void pauseOnKeystroke() {
 // accel //
 ///////////
 
-Adafruit_LSM303 lsm; // Bridge to accelerometer hardware.
+Adafruit_LSM303_Old lsm; // Bridge to accelerometer hardware.
 AccelReading accelBuffer[10]; // Buffer for storing the last 10 readings.
 int bufferPosition; // Current read position of the buffer.
 
