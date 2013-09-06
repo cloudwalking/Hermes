@@ -12,9 +12,11 @@ Parts for one shoe
 
 * strip of LEDs - I used a 22-LED strip of [LPD8806](https://www.google.com/search?q=LPD8806)
 
+* battery - I used 1300 mAh 3.7v lithium ion polymer ([similar](http://www.adafruit.com/products/258))
+
 * 4-pin cable with male and female plug - I used [4-pin JST SM](http://www.adafruit.com/products/578)
 
-* extra insulated wire and heatshrink
+* additional insulated wire and heatshrink
 
 * velcro
 
@@ -26,10 +28,10 @@ Parts for one shoe
 
 To do:
 
-1. Parts list [X]
+1. ~~Parts list~~
 
-2. Wiring diagram [ ]
+2. Wiring diagram
 
-3. Manufacturing for the desert [ ]
+3. Manufacturing for the desert
 
-4. Future improvements [ ]
+4. Future improvements
