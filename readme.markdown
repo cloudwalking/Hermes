@@ -35,3 +35,7 @@ To do:
 3. Manufacturing for the desert
 
 4. Future improvements
+
+---
+
+Copyright 2013 RGAM LLC

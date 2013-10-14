@@ -1,3 +1,9 @@
+/*
+ * Hermes LED shoes
+ * Copyright 2013 RGAM LLC
+ *
+ */
+
 /* Run parameters: */
 #define MAX_BRIGHTNESS 0.75 // Max LED brightness.
 #define MIN_BRIGHTNESS 0.3
