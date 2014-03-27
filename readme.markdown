@@ -1,6 +1,6 @@
 This is the source code for shoes we brought to Burning Man 2013. Here they are in action: http://www.youtube.com/watch?v=sKvZDpVvEeQ
 
-The shoes lasted 25-30 before needing repairs to the LED strips. The arduino + accelerometer worked flawlessly for 6 nights in a row. A single 1300 mAh 3.7v lipo battery powers a single shoe for ~25 hours.
+The shoes lasted 25-30 hours of walking before needing repairs to the LED strips. This is due to the LED strip flexing with each step. The arduino + accelerometer worked flawlessly for 6 nights in a row. A single 1300 mAh 3.7v lipo battery powers a single shoe for ~25 hours.
 
 ---
 
