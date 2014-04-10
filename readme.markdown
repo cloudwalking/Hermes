@@ -27,6 +27,7 @@ Parts for one shoe
 ---
 
 Building for the desert
+
 Here are some pictures with notes on our build process: https://plus.google.com/photos/+ReedMorse/albums/6000559493337328561
 
 ---
