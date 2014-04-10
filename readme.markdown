@@ -25,6 +25,9 @@ Parts for one shoe
 * [high quality superglue](http://www.amazon.com/Loctite-1365882-20-Gram-Bottle-Professional/dp/B004Y960MU/)
 
 ---
+Building for the desert
+Here are some pictures with notes on our build process: https://plus.google.com/photos/+ReedMorse/albums/6000559493337328561
+---
 
 To do:
 
@@ -32,7 +35,7 @@ To do:
 
 2. Wiring diagram
 
-3. Manufacturing for the desert
+3. ~~Building for the desert~~
 
 4. Future improvements
 
