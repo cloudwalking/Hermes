@@ -36,7 +36,7 @@ To do:
 
 1. ~~Parts list~~
 
-2. Wiring diagram
+2. ~~Wiring diagram~~
 
 3. ~~Building for the desert~~
 
