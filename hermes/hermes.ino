@@ -1,47 +1,44 @@
 /*
  * Hermes LED shoes
- * Copyright 2013 RGAM LLC
+ * Copyright 2013-2014 RGAM LLC
  *
  */
 
 /* Run parameters: */
-#define MAX_BRIGHTNESS 0.75 // Max LED brightness.
-#define MIN_BRIGHTNESS 0.3
+#define MAX_BRIGHTNESS 0.35 // Max LED brightness.
+#define MIN_BRIGHTNESS 0.1
 #define WAIT_FOR_KEYBOARD 0 // Use keyboard to pause/resume program.
 
-/* LED parameters: */
-#define LED_COUNT 22
+/* Neopixel parameters: */
+#define LED_COUNT 96
 #define DATA_PIN 6
-#define CLOCK_PIN 12
 
 /* Animation parameters: */
 // ~15 ms minimum crawl speed for normal mode,
 // ~2 ms minimum for superfast hack mode.
-#define CRAWL_SPEED_MS 14
+#define CRAWL_SPEED_MS 1
 // Emulate two strips by starting the crawl in the
 // middle of the strip and crawling both ways.
 #define ENABLE_SPLIT_STRIP 1
 // Center LED, aka LED #0.
-#define SPLIT_STRIP_CENTER 11
+#define SPLIT_STRIP_CENTER 48
 
 /* Sleeping parameters: */
-#define SLEEP_BRIGHTNESS 0.25
+#define SLEEP_BRIGHTNESS 0.20
 #define SLEEP_CYCLE_MS 5000 // 5 second breathing cycle.
 #define SLEEP_WAIT_TIME_MS 5000 // No movement for 5 seconds triggers breathing.
-#define SLEEP_SENSITIVITY 40
+#define SLEEP_SENSITIVITY 80
 
 /* Debug parameters: */
 #define PRINT_LOOP_TIME 0
 
 /* Advanced: */
-#define SUPERFAST_LED_HACK 1 // Requires specific configuration, see stripShow().
 #define ONBOARD_LED_PIN 7 // Pin D7 has an LED connected on FLORA.
 
 ///////////////////////////////////////////////////////////////////
 
 // LED imports.
-#include <SPI.h>
-#include <LPD8806.h>
+#include <Adafruit_NeoPixel.h>
 
 // Accel imports.
 #include <Wire.h>
@@ -354,7 +351,7 @@ uint32_t lastColor;
 unsigned long lastCrawl;
 uint32_t lightArray[LED_COUNT];
 
-LPD8806 strip = LPD8806(LED_COUNT, DATA_PIN, CLOCK_PIN);
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(LED_COUNT, DATA_PIN, NEO_GRB + NEO_KHZ800);
 
 void colorSetup() {
   lastColor = 0;
@@ -624,7 +621,7 @@ void resetBreathe() {
   keyframePointer = 0;
 }
 
-void breathe(LPD8806 strip) {
+void breathe(Adafruit_NeoPixel strip) {
   int numKeyframes = sizeof(KEYFRAMES) - 1;
   float period = SLEEP_CYCLE_MS / numKeyframes;
   unsigned long now = millis();
