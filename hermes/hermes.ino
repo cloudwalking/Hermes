@@ -5,21 +5,26 @@
  */
 
 /* Run parameters: */
-#define MAX_BRIGHTNESS 0.35 // Max LED brightness.
-#define MIN_BRIGHTNESS 0.1
+#define MAX_BRIGHTNESS 0.65 // Max LED brightness.
+#define MIN_BRIGHTNESS 0.3
 #define WAIT_FOR_KEYBOARD 0 // Use keyboard to pause/resume program.
 
 /* Neopixel parameters: */
-#define LED_COUNT 96
+#define LED_COUNT 55
 #define DATA_PIN 6
 
 /* Animation parameters: */
 // ~15 ms minimum crawl speed for normal mode,
 // ~2 ms minimum for superfast hack mode.
-#define CRAWL_SPEED_MS 1
+#define CRAWL_SPEED_MS 5
+// General sensitivity of the animation.
+// Raising this raises the vector magnitude needed to reach max (purple),
+// and thus lowers sensitivity.
+// Eg: 800 = more sensitive, 1600 = less sensitive
+#define HERMES_SENSITIVITY 400.0
 // Emulate two strips by starting the crawl in the
 // middle of the strip and crawling both ways.
-#define ENABLE_SPLIT_STRIP 1
+#define ENABLE_SPLIT_STRIP 0
 // Center LED, aka LED #0.
 #define SPLIT_STRIP_CENTER 48
 
@@ -27,7 +32,7 @@
 #define SLEEP_BRIGHTNESS 0.20
 #define SLEEP_CYCLE_MS 5000 // 5 second breathing cycle.
 #define SLEEP_WAIT_TIME_MS 5000 // No movement for 5 seconds triggers breathing.
-#define SLEEP_SENSITIVITY 80
+#define SLEEP_SENSITIVITY 5
 
 /* Debug parameters: */
 #define PRINT_LOOP_TIME 0
@@ -371,7 +376,7 @@ void updateLED() {
   // LED color takes a value from 0.0 to 1.0. Calculate scale from the current vector.
 
   // Largest vector needed to hit max color (1.0).
-  double upperBound = 1600.0;
+  double upperBound = HERMES_SENSITIVITY;
   double normalizedVector = abs(calibration - getMagnitude(getCurrentReading()));
   double scale = normalizedVector / upperBound;
   
