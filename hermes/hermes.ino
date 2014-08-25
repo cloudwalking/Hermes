@@ -10,29 +10,29 @@
 #define WAIT_FOR_KEYBOARD 0 // Use keyboard to pause/resume program.
 
 /* Neopixel parameters: */
-#define LED_COUNT 55
+#define LED_COUNT 98
 #define DATA_PIN 6
 
 /* Animation parameters: */
 // ~15 ms minimum crawl speed for normal mode,
 // ~2 ms minimum for superfast hack mode.
-#define CRAWL_SPEED_MS 5
+#define CRAWL_SPEED_MS 2
 // General sensitivity of the animation.
 // Raising this raises the vector magnitude needed to reach max (purple),
 // and thus lowers sensitivity.
 // Eg: 800 = more sensitive, 1600 = less sensitive
-#define HERMES_SENSITIVITY 400.0
+#define HERMES_SENSITIVITY 1600.0
 // Emulate two strips by starting the crawl in the
 // middle of the strip and crawling both ways.
-#define ENABLE_SPLIT_STRIP 0
+#define ENABLE_SPLIT_STRIP 1
 // Center LED, aka LED #0.
-#define SPLIT_STRIP_CENTER 48
+#define SPLIT_STRIP_CENTER 83
 
 /* Sleeping parameters: */
-#define SLEEP_BRIGHTNESS 0.20
+#define SLEEP_BRIGHTNESS 0.30
 #define SLEEP_CYCLE_MS 5000 // 5 second breathing cycle.
 #define SLEEP_WAIT_TIME_MS 5000 // No movement for 5 seconds triggers breathing.
-#define SLEEP_SENSITIVITY 5
+#define SLEEP_SENSITIVITY 25
 
 /* Debug parameters: */
 #define PRINT_LOOP_TIME 0
@@ -423,17 +423,18 @@ void crawlColor(uint32_t color) {
 
   if (ENABLE_SPLIT_STRIP) {
     int centerLED = SPLIT_STRIP_CENTER;
+    int LEDsPerSide = floor(LED_COUNT / 2);
   
-    // Crawl 'low' side (center - 1 to zero)
+    // Crawl 'low' side (center down)
     uint32_t *pixelColor = lightArray;
-    for (int led = centerLED - 1; led >= 0; led--) {
-      strip.setPixelColor(led, *pixelColor++);
+    for (int led = centerLED - 1; led >= centerLED - 1 - LEDsPerSide; led--) {
+      strip.setPixelColor(constrainBetween(led, 0, LED_COUNT - 1), *pixelColor++);
     }
   
-    // Crawl 'high' side (center to LED_COUNT)
+    // Crawl 'high' side (center up)
     pixelColor = lightArray;
-    for (int led = centerLED; led < LED_COUNT; led++) {
-      strip.setPixelColor(led, *pixelColor++);
+    for (int led = centerLED; led < centerLED + LEDsPerSide; led++) {
+      strip.setPixelColor(constrainBetween(led, 0, LED_COUNT - 1), *pixelColor++);
     }
   
     stripShow();
@@ -445,6 +446,15 @@ void crawlColor(uint32_t color) {
     strip.setPixelColor(i, lightArray[i]);
   }
   stripShow();
+}
+
+int constrainBetween(int value, int lower, int higher) {
+  if (value < lower) {
+    value = higher - (lower - value) + 1;
+  } else if (value > higher) {
+    value = lower + (value - higher) - 1;
+  }
+  return value;
 }
 
 // Sets the strip all one color.
