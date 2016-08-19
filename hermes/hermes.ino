@@ -386,7 +386,7 @@ void updateLED() {
   //showColor(scale);
   
   if (sleep()) {
-    breathe(strip);
+    breathe();
   } else {
     crawlColor(pixelColor);
   }
@@ -636,7 +636,7 @@ void resetBreathe() {
   keyframePointer = 0;
 }
 
-void breathe(Adafruit_NeoPixel strip) {
+void breathe() {
   int numKeyframes = sizeof(KEYFRAMES) - 1;
   float period = SLEEP_CYCLE_MS / numKeyframes;
   unsigned long now = millis();
