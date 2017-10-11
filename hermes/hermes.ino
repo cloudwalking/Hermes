@@ -151,15 +151,9 @@ void accelSetup() {
 
   
   // Try to initialise and warn if we couldn't detect the chip
-  digitalWrite(ONBOARD_LED_PIN, HIGH);
-  if (!lsm.begin())
-  {
-    Serial.println("Oops ... unable to initialize the LSM303. Check your wiring!");
-    while (1);
+  if (!lsm.begin()) {
+    Serial.println("Unable to initialize the LSM303. Check your wiring!");
   }
-  digitalWrite(ONBOARD_LED_PIN, LOW);
-  
-  
   bufferPosition = 0;
 
   // Initialize the full buffer to zero.
