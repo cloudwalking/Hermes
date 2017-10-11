@@ -47,7 +47,8 @@
 
 // Accel imports.
 #include <Wire.h>
-#include <Adafruit_LSM303_Old.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_LSM303.h>
 
 // Our custom data type.
 #include "AccelReading.h"
@@ -133,7 +134,7 @@ void pauseOnKeystroke() {
 // accel //
 ///////////
 
-Adafruit_LSM303_Old lsm; // Bridge to accelerometer hardware.
+Adafruit_LSM303 lsm; // Bridge to accelerometer hardware.
 AccelReading accelBuffer[10]; // Buffer for storing the last 10 readings.
 int bufferPosition; // Current read position of the buffer.
 
@@ -147,8 +148,17 @@ unsigned long lastSignificantMovementTime;
 // Initialization.
 void accelSetup() {
   Serial.println("BEGIN");
+
   
-  lsm.begin();
+  // Try to initialise and warn if we couldn't detect the chip
+  digitalWrite(ONBOARD_LED_PIN, HIGH);
+  if (!lsm.begin())
+  {
+    Serial.println("Oops ... unable to initialize the LSM303. Check your wiring!");
+    while (1);
+  }
+  digitalWrite(ONBOARD_LED_PIN, LOW);
+  
   
   bufferPosition = 0;
 
