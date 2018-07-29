@@ -21,7 +21,7 @@
 // Raising this raises the vector magnitude needed to reach max (purple),
 // and thus lowers sensitivity.
 // Eg: 800 = more sensitive, 1600 = less sensitive
-#define HERMES_SENSITIVITY 1600.0
+#define HERMES_SENSITIVITY 3200.0
 // Emulate two strips by starting the crawl in the
 // middle of the strip and crawling both ways.
 #define ENABLE_SPLIT_STRIP 1
@@ -47,10 +47,7 @@
 
 // Accel imports.
 #include <Wire.h>
-#include <Adafruit_Sensor.h>
-#include <Adafruit_LSM303.h>
-
-// Our custom data type.
+#include <Adafruit_LSM303_Old.h>
 #include "AccelReading.h"
 
 void setup() {
@@ -134,7 +131,7 @@ void pauseOnKeystroke() {
 // accel //
 ///////////
 
-Adafruit_LSM303 lsm; // Bridge to accelerometer hardware.
+Adafruit_LSM303_Old lsm; // Bridge to accelerometer hardware.
 AccelReading accelBuffer[10]; // Buffer for storing the last 10 readings.
 int bufferPosition; // Current read position of the buffer.
 
@@ -355,7 +352,7 @@ bool equalReadings(AccelReading a, AccelReading b) {
 // color //
 ///////////
 
-int COLOR_RANGE = 384;
+int COLOR_RANGE = 383;
 uint32_t lastColor;
 unsigned long lastCrawl;
 uint32_t lightArray[LED_COUNT];
@@ -485,6 +482,7 @@ void showColor(float scale) {
 // Takes a scale, from 0.0 to 1.0, indicating progression
 // through the color rainbow.
 uint32_t pixelColorForScale(double scale) {
+  scale = max(min(scale, 1), 0);
   float brightness = MAX_BRIGHTNESS * (scale + MIN_BRIGHTNESS);
   int c = COLOR_RANGE * scale; // Intentionally round to an int.
 
