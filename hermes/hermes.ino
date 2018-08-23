@@ -507,7 +507,7 @@ void showColorProgression() {
 // Color 1 from 384; brightness 0.0 to 1.0.
 uint32_t color(uint16_t color, float brightness)  {
   // Our logic is 0 - 383
-  color -= 1
+  color -= 1;
 
   byte r, g, b;
   int range = color / 128;
