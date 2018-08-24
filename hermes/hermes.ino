@@ -10,13 +10,13 @@
 #define WAIT_FOR_KEYBOARD 0 // Use keyboard to pause/resume program.
 
 /* Neopixel parameters: */
-#define LED_COUNT 98
+#define LED_COUNT 19
 #define DATA_PIN 6
 
 /* Animation parameters: */
 // ~15 ms minimum crawl speed for normal mode,
 // ~2 ms minimum for superfast hack mode.
-#define CRAWL_SPEED_MS 2
+#define CRAWL_SPEED_MS 35
 // General sensitivity of the animation.
 // Raising this raises the vector magnitude needed to reach max (purple),
 // and thus lowers sensitivity.
@@ -26,7 +26,7 @@
 // middle of the strip and crawling both ways.
 #define ENABLE_SPLIT_STRIP 1
 // Center LED, aka LED #0.
-#define SPLIT_STRIP_CENTER 83
+#define SPLIT_STRIP_CENTER 8
 
 /* Sleeping parameters: */
 #define SLEEP_BRIGHTNESS 0.30
@@ -48,14 +48,14 @@
 // Accel imports.
 #include <Wire.h>
 #include <Adafruit_LSM303_Old.h>
+//#include <Adafruit_LSM303.h>
 
 // Our custom data type.
 #include "AccelReading.h"
 
 void setup() {
-  if (WAIT_FOR_KEYBOARD) {
     Serial.begin(9600);
-
+  if (WAIT_FOR_KEYBOARD) {
     // Wait for serial to initalize.
     while (!Serial) { }
 
@@ -134,6 +134,7 @@ void pauseOnKeystroke() {
 ///////////
 
 Adafruit_LSM303_Old lsm; // Bridge to accelerometer hardware.
+//Adafruit_LSM303 lsm; // Bridge to accelerometer hardware.
 AccelReading accelBuffer[10]; // Buffer for storing the last 10 readings.
 int bufferPosition; // Current read position of the buffer.
 
@@ -146,7 +147,9 @@ unsigned long lastSignificantMovementTime;
 
 // Initialization.
 void accelSetup() {
-  Serial.println("BEGIN");
+  if (WAIT_FOR_KEYBOARD) {
+    Serial.println("BEGIN");
+  }
   
   lsm.begin();
   
@@ -163,6 +166,10 @@ void accelSetup() {
 }
 
 void calibrate() {
+  if (WAIT_FOR_KEYBOARD) {
+    Serial.println("Calibrating");
+  }
+
   calibration = 0;
   calibrationLEDTime = 0;
   calibrationLEDOn = false;
@@ -170,6 +177,9 @@ void calibrate() {
   showCalibration();
 
   while (1) {
+    if (WAIT_FOR_KEYBOARD) {
+      Serial.print("...");
+    }
     // Update onboard LED.
     unsigned long now = millis();
     if (now - calibrationLEDTime > 250) {
@@ -181,6 +191,9 @@ void calibrate() {
     // Fill the buffer.
     if(!fillBuffer()) {
       delay(10);
+      if (WAIT_FOR_KEYBOARD) {
+        Serial.println("Waiting to fill buffer");
+      }
       continue;
     }
     
@@ -202,6 +215,10 @@ void calibrate() {
     } else {
       avg /= bufferSize();
       calibration = avg;
+      if (WAIT_FOR_KEYBOARD) {
+        Serial.print("Recalculating with average: ");
+        Serial.println(calibration);
+      }
     }
   }
   
@@ -356,7 +373,7 @@ uint32_t lastColor;
 unsigned long lastCrawl;
 uint32_t lightArray[LED_COUNT];
 
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(LED_COUNT, DATA_PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(LED_COUNT, DATA_PIN, NEO_RGB + NEO_KHZ800);
 
 void colorSetup() {
   lastColor = 0;
@@ -507,7 +524,7 @@ void showColorProgression() {
 // Color 1 from 384; brightness 0.0 to 1.0.
 uint32_t color(uint16_t color, float brightness)  {
   // Our logic is 0 - 383
-  color -= 1
+  color = min(max(color, 0), 383);
 
   byte r, g, b;
   int range = color / 128;
